@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:latest
+    restart: on-failure
+    container_name: postgres_warehouse
+    volumes:
+      - postgres_data:/var/lib/postgresql/warehouse_data
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGDATA: /var/lib/postgresql/warehouse_data
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    command: uvicorn app.main:app --reload --host 0.0.0.0
+    restart: on-failure
+    container_name: fastapi
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+
+volumes:
+  postgres_data:
